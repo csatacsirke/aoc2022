@@ -2,6 +2,7 @@ from __future__ import annotations
 import re 
 import math
 
+assert({1: (0, 1)} == {1: (0, 1)})
 
 def make_add(N):
 	return lambda x: x + N
@@ -34,6 +35,7 @@ def read_monkies(lines):
 	"""
 
 	it = iter(lines)
+	item_index = 0
 	while True:
 		line = next(it, None)
 		if line is None:
@@ -63,43 +65,71 @@ def read_monkies(lines):
 		monkey_id_if_true = int(re.match(r'.*If true: throw to monkey (\d+)', true_line).group(1))
 		monkey_id_if_false = int(re.match(r'.*If false: throw to monkey (\d+)', false_line).group(1))
 
+		for i in range(0, len(starting_items)):
+			starting_items[i] = (item_index, starting_items[i])
+			item_index += 1
+
+
 		yield Monkey(starting_items, operation, divisible_by, monkey_id_if_true, monkey_id_if_false)
 		continue
 	
 
 	return
 
+
+def save(monkies: list[Monkey]) -> dict[int, int]:
+	saved = {}
+
+	for monkey_index in range(0, len(monkies)):
+		saved[monkey_index] = set()
+		for (item_index, item) in monkies[monkey_index].items:
+			saved[monkey_index].add(item_index)
+	return saved
+
 def solve(lines):
 
 
 
+	rounds_total = 10000 
+
 	monkies = list(read_monkies(lines))
 
-	inspect_count = {}
+	inspect_counts = {}
 
-	for _ in range(0, 20):
+	max_modulo = 1
+	for monkey in monkies:
+		max_modulo *= monkey.divisible_by
+
+	for round_index in range(0, rounds_total):
+
+		if round_index % 100 == 0:
+			print(round_index)
+
+		inspect_counts_this_round = {}
+		
 		for monkey_index in range(0, len(monkies)):
 			monkey = monkies[monkey_index]
 
 			while len(monkey.items) > 0:
-				inspect_count[monkey_index] = inspect_count.get(monkey_index, 0) + 1
+				inspect_counts[monkey_index] = inspect_counts.get(monkey_index, 0) + 1
+				inspect_counts_this_round[monkey_index] = inspect_counts_this_round.get(monkey_index, 0) + 1
+				
 
-				item = monkey.items.pop(0)
-				item = monkey.operation(item)
-				item = item // 3
+				(item_index, item) = monkey.items.pop(0)
+				item = monkey.operation(item) % max_modulo
+				# item = item // 3 # oh no
 				if item % monkey.divisible_by == 0:
-					monkies[monkey.monkey_id_if_true].items.append(item)
+					monkies[monkey.monkey_id_if_true].items.append((item_index, item))
 				else:
-					monkies[monkey.monkey_id_if_false].items.append(item)
-			for item in monkey.items:
-				continue
-
+					monkies[monkey.monkey_id_if_false].items.append((item_index, item))
+			
+		
 			continue
+		
 		continue
 
-	
-	print(inspect_count.items())
-	print(math.prod(sorted(inspect_count.values())[-2:]))
+	inspection_count = math.prod(sorted(inspect_counts.values())[-2:])
+	print(inspection_count)
 
 	return
 
