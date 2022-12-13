@@ -168,20 +168,37 @@ def debug_print_done_map(done_map: DoneMap):
 
 	print()
 	return
-def solve(lines):
 
-	(height_map, start, end) = parse_lines(lines)
-
+def solve_trial(height_map, start, end):
+	
 	open: OpenList = [ (start, start, 0) ]
 	done_map: DoneMap = {}
 
 	iterate_pathfinding(height_map, open, done_map)
 
-	debug_print_done_map(done_map)
+	#debug_print_done_map(done_map)
 
-	(point_from, distance_from_start) = done_map[end]
-	print(distance_from_start)
+	result = done_map.get(end)
+	if result is None:
+		return None
+	
+	(point_from, distance_from_start) = result
+	return distance_from_start
+	
+def solve(lines):
 
+	(height_map, _, end) = parse_lines(lines)
+	
+	min_result = 100000
+	for (point, height) in height_map.items():
+		if height == 0:
+			result = solve_trial(height_map, point, end)
+			if result is None:
+				continue
+			min_result = min(min_result, result)
+
+
+	print(min_result)
 
 	return
 
